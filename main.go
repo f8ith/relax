@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+        "os/exec"
 	"path"
 	"syscall"
 	"strings"
@@ -27,7 +28,7 @@ type Profile struct {
 	Fields        map[string]string
 	PasswordField string
 	SuccessText   string
-	SSID 		  string
+	SSID          string
 }
 
 var config Config
@@ -58,10 +59,10 @@ func main() {
 	LoadConfig()
 	var profile Profile
 	var profileName string
-	if len(os.Args) <= 1 {
-		profileName = config.DefaultProfile
-	} else {
+	if len(os.Args) >= 2 {
 		profileName = os.Args[1]
+	} else {
+		profileName = config.DefaultProfile
 	}
 	profile = config.Profiles[profileName]
 	if profile.SSID == "" || wifiname.WifiName() == profile.SSID {
@@ -84,16 +85,15 @@ func main() {
 		for k, v := range profile.Fields {
 		    formData.Add(k, v)
 		}
-		fmt.Println(profile)
 		r, err  := http.PostForm(profile.Url, formData)
 		if err != nil {
-			log.Fatal("HttpPost: ", err.Error())
+		    log.Fatal("HttpPost: ", err.Error())
 		}
 		defer r.Body.Close()
 		rBytes, _ := io.ReadAll(r.Body)
 		if strings.Contains(string(rBytes), profile.SuccessText) {
-			fmt.Println("online")
-		}
+                  _ = exec.Command("osascript -e 'display notification \"Wifi connected!\" with title \"relax\"'")
+                }
 		return
 	}
 }
